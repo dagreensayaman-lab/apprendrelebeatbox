@@ -571,11 +571,19 @@ footer a{display:inline-block;padding-block:12px}
      Les événements partent vers TRACK_URL (Google Apps Script relié à un Google Sheet).
      Tant qu'elle est vide, rien n'est envoyé et le formulaire le dit clairement. */
   var TRACK_URL='https://script.google.com/macros/s/AKfycbxXdaup0fEoY1l5qZAa4GpHPB2YmnyFfi1xrWcw2KPUaA1x1nMYZAzDUNuHu05OW-Sh/exec';var LOCAL=(location.protocol==='file:'||location.hostname==='localhost');
+  var mine=false;try{if(/#moi/.test(location.hash))localStorage.setItem('kmoi','1');mine=localStorage.getItem('kmoi')==='1'}catch(x){}
   function track(type,label){
     var ev={type:type,label:label||'',page:location.pathname.split('/').pop()||'index',lang:navigator.language||'',w:innerWidth,t:new Date().toISOString()};
-    if(!TRACK_URL||LOCAL)return;
+    if(!TRACK_URL||LOCAL||mine)return;
     try{var body=JSON.stringify(ev);if(navigator.sendBeacon){navigator.sendBeacon(TRACK_URL,new Blob([body],{type:'text/plain'}))}else{fetch(TRACK_URL,{method:'POST',mode:'no-cors',body:body})}}catch(x){}
   }
+  /* visiteurs: identifiant anonyme aléatoire (aucune donnée personnelle), une visite par session */
+  (function(){var vid='anon';try{vid=localStorage.getItem('kvid');if(!vid){vid=Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);localStorage.setItem('kvid',vid)}}catch(x){}
+    var seen=false;try{seen=sessionStorage.getItem('kvisit')==='1';sessionStorage.setItem('kvisit','1')}catch(x){}
+    if(seen)return;
+    var src='direct';try{var u=new URLSearchParams(location.search).get('utm_source');if(u)src=u;else if(document.referrer)src=new URL(document.referrer).hostname.replace(/^www\./,'')}catch(x){}
+    track('visite',vid);track('source',src);
+  })();
   document.addEventListener('click',function(e){
     var a=e.target.closest('a[href],[data-track]');if(!a)return;
     var lab=a.getAttribute('data-track');
